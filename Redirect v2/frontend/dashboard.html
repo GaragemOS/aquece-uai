@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garagem - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+
+    <!-- Loader Global -->
+    <div id="globalLoader" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="spinner w-16 h-16 mx-auto mb-4"></div>
+            <p class="text-white text-lg" data-loader-label>Carregando...</p>
+        </div>
+    </div>
+
+    <!-- Modal de Notificação -->
+    <div id="notificationModal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 fade-in">
+            <div class="flex items-center mb-4">
+                <div id="modalIcon" class="mr-3"></div>
+                <h3 id="modalTitle" class="text-xl font-bold text-gray-800"></h3>
+            </div>
+            <p id="modalMessage" class="text-gray-600 mb-6"></p>
+            <button type="button" data-modal-close="notificationModal"
+                class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 rounded-lg transition duration-200">
+                Entendi
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação -->
+    <div id="confirmModal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 fade-in">
+            <div class="flex items-center mb-4">
+                <i class="fas fa-exclamation-circle text-yellow-500 text-3xl mr-3"></i>
+                <h3 class="text-xl font-bold text-gray-800">Confirmar Ação</h3>
+            </div>
+            <p id="confirmMessage" class="text-gray-600 mb-6"></p>
+            <div class="flex gap-3">
+                <button type="button"
+                    class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 rounded-lg transition duration-200"
+                    data-modal-close="confirmModal">
+                    Cancelar
+                </button>
+                <button id="confirmButton"
+                    class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition duration-200">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Conectar Instância -->
+    <div id="connectInstanceModal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 fade-in">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800">Conectar Instância</h3>
+                    <p class="text-sm text-gray-500">Escolha como deseja parear o dispositivo.</p>
+                </div>
+                <button type="button" class="text-gray-400 hover:text-gray-600" data-modal-close="connectInstanceModal">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div class="bg-gray-50 rounded-lg p-3">
+                    <p class="text-xs text-gray-500 uppercase tracking-wide">Instância</p>
+                    <p id="connectInstanceName" class="text-base text-gray-800 font-semibold">Instância</p>
+                    <p class="text-sm text-gray-500">Número: <span id="connectInstanceNumber">—</span></p>
+                    <p class="text-sm text-gray-500">Hash: <span id="connectInstanceHash">—</span></p>
+                </div>
+
+                <div>
+                    <p class="text-xs text-gray-500 uppercase tracking-wide mb-2">Método de conexão</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <label
+                            class="flex items-start gap-3 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:border-orange-300 transition">
+                            <input type="radio" name="connectInstanceMethod" value="paircode"
+                                class="mt-1 text-orange-600 focus:ring-orange-500" checked>
+                            <div>
+                                <p class="text-sm font-medium text-gray-800">Código numérico</p>
+                                <p class="text-xs text-gray-500">Gerar pair code para autenticação.</p>
+                            </div>
+                        </label>
+                        <label
+                            class="flex items-start gap-3 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:border-orange-300 transition">
+                            <input type="radio" name="connectInstanceMethod" value="qrcode"
+                                class="mt-1 text-orange-600 focus:ring-orange-500">
+                            <div>
+                                <p class="text-sm font-medium text-gray-800">QR Code</p>
+                                <p class="text-xs text-gray-500">Escanear com o WhatsApp Web.</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="connectInstanceStatus" class="hidden"></div>
+
+                <div id="connectInstancePaircodeWrapper"
+                    class="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
+                    <p class="text-xs text-orange-600 uppercase tracking-wide mb-2">Pair Code</p>
+                    <p id="connectInstancePaircode" class="text-3xl font-mono font-bold text-orange-700">—</p>
+                </div>
+
+                <div id="connectInstanceQrWrapper" class="hidden bg-orange-50 border border-orange-200 rounded-lg p-4">
+                    <div class="flex flex-col items-center gap-3">
+                        <div
+                            class="w-48 h-48 sm:w-56 sm:h-56 bg-white border border-orange-200 rounded-lg flex items-center justify-center overflow-hidden">
+                            <img id="connectInstanceQrImage" class="max-w-full max-h-full hidden"
+                                alt="QR Code da instância">
+                            <span id="connectInstanceQrPlaceholder" class="text-sm text-gray-400 text-center px-4">QR
+                                Code não gerado.</span>
+                        </div>
+                        <p class="text-xs text-orange-600 text-center">
+                            Abra o WhatsApp e acesse <strong>Dispositivos Conectados</strong> para escanear.
+                        </p>
+                    </div>
+                </div>
+
+                <div id="connectInstanceLoading" class="hidden flex items-center gap-2 text-sm text-gray-500">
+                    <span
+                        class="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></span>
+                    Gerando código...
+                </div>
+
+                <div id="connectInstanceError" class="hidden text-sm text-red-500"></div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3 mt-6">
+                <button id="connectInstanceRegenerate"
+                    class="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-700 font-semibold py-3 rounded-lg transition disabled:bg-orange-50 disabled:text-orange-300"
+                    type="button">
+                    Gerar Outro Código
+                </button>
+                <button id="connectInstanceVerify"
+                    class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition disabled:bg-green-400"
+                    type="button">
+                    Verificar Conexão
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Novo Projeto -->
+    <div id="newInstanceModal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 fade-in max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Novo Projeto</h3>
+                <button type="button" class="text-gray-400 hover:text-gray-600" data-modal-close="newInstanceModal">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="newInstanceForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome do Projeto</label>
+                    <input type="text" id="projectName" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="Meu Projeto">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Slug</label>
+                    <input type="text" id="projectSlug" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="meu-projeto">
+                    <p class="text-xs text-gray-400 mt-1">Usado na URLs. Apenas letras minúsculas, números e hífens.</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
+                    <textarea id="projectDescription" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="Descrição do projeto" rows="3"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Thumbnail do Projeto</label>
+                    <input type="file" id="projectThumbnail" accept="image/*"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                    <p class="text-xs text-gray-400 mt-1">Formatos suportados: JPG, PNG, GIF ou WEBP (máx. 50MB).</p>
+                    <div id="projectThumbPreview" class="hidden mt-3">
+                        <p class="text-xs text-gray-500 mb-2">Pré-visualização:</p>
+                        <img id="projectThumbPreviewImage" src="" alt="Prévia do projeto"
+                            class="w-full h-32 object-cover rounded-lg border border-gray-200">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Instância Dona *</label>
+                    <select id="projectOwnerSelect" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                        <option value="">Selecione uma instância</option>
+                    </select>
+                    <p class="text-xs text-gray-400 mt-1">Apenas instâncias administradoras podem ser definidas como
+                        donas do projeto.</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Quantidade de Grupos *</label>
+                    <input type="number" id="projectGroupQuantity" min="1" max="100" value="1" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="1">
+                    <p class="text-xs text-gray-400 mt-1">Informe quantos grupos serão criados automaticamente (entre 1
+                        e 100).</p>
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-medium text-gray-700">Instâncias Administradoras</label>
+                        <button type="button" id="refreshProjectInstances"
+                            class="text-xs text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1">
+                            <i class="fas fa-sync-alt"></i>
+                            Atualizar
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mb-2">Selecione as instâncias administradoras que fornecerão os
+                        tokens (adminsProjeto) e números (telAdminsProjeto) deste projeto.</p>
+                    <div id="projectInstancesEmptyState"
+                        class="hidden text-xs text-gray-500 bg-gray-100 border border-dashed border-gray-300 rounded-lg p-3">
+                        Nenhuma instância administradora disponível. Atualize para tentar novamente.
+                    </div>
+                    <div id="projectInstancesList" class="space-y-2 max-h-48 overflow-y-auto">
+                        <p class="text-sm text-gray-500">Carregando instâncias...</p>
+                    </div>
+                </div>
+                <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm font-medium text-gray-700">Mensagem para Grupo Cheio</label>
+                        <label class="flex items-center text-sm text-gray-600">
+                            <input type="checkbox" id="projectDisableGroupFullMessage"
+                                class="mr-2 h-4 w-4 text-orange-600 border-gray-300 rounded">
+                            Não enviar
+                        </label>
+                    </div>
+                    <div id="projectFullMessageConfig" class="mt-4 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Tipo da Mensagem *</label>
+                            <select id="projectFullMessageType"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                                <option value="text">Texto</option>
+                                <option value="image">Imagem</option>
+                                <option value="video">Vídeo</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Mensagem *</label>
+                            <textarea id="projectFullMessageText" rows="3"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                placeholder="Mensagem automática quando o grupo estiver cheio"></textarea>
+                        </div>
+                        <div id="projectFullMessageMediaField" class="space-y-2 hidden">
+                            <label class="block text-sm font-medium text-gray-700">Mídia</label>
+                            <input type="file" id="projectFullMessageMedia" accept="image/*,video/*"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                            <p class="text-xs text-gray-400">Tamanho máximo de 50MB. Obrigatório para imagem/vídeo.</p>
+                            <div id="projectFullMessageMediaPreview"
+                                class="hidden text-xs text-gray-500 bg-white border border-dashed border-gray-300 rounded-lg p-2">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit"
+                    class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 rounded-lg transition duration-200">
+                    Criar Projeto
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Detalhes do Projeto -->
+    <div id="projectDetailsModal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 fade-in max-h-[90vh] overflow-y-auto">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800">Detalhes do Projeto</h3>
+                    <p class="text-sm text-gray-500">Visualize e atualize as informações deste projeto.</p>
+                </div>
+                <button type="button" class="text-gray-400 hover:text-gray-600" data-modal-close="projectDetailsModal">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="projectDetailsForm" class="space-y-4">
+                <input type="hidden" id="projectDetailsHash">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <span id="projectDetailsStatusBadge"
+                        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                        Ativo
+                    </span>
+                    <span class="text-xs text-gray-500">
+                        Hash: <span id="projectDetailsHashDisplay" class="font-mono text-gray-700">—</span>
+                    </span>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome do Projeto</label>
+                    <input type="text" id="projectDetailsName" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="Meu Projeto">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Slug</label>
+                    <input type="text" id="projectDetailsSlug" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="meu-projeto">
+                    <p class="text-xs text-gray-400 mt-1">Usado em URLs. Apenas letras minúsculas, números e hífens.</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
+                    <textarea id="projectDetailsDescription" required rows="3"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="Descrição do projeto"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Instância Dona *</label>
+                    <select id="projectDetailsOwnerSelect" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                        <option value="">Selecione uma instância</option>
+                    </select>
+                    <p class="text-xs text-gray-400 mt-1">Apenas instâncias administradoras podem ser definidas como
+                        donas do projeto.</p>
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-medium text-gray-700">Thumbnail do Projeto</label>
+                        <button type="button" id="projectDetailsRemoveThumbnail"
+                            class="text-xs text-red-500 hover:text-red-600 font-medium">
+                            Remover
+                        </button>
+                    </div>
+                    <input type="file" id="projectDetailsThumbnail" accept="image/*"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                    <p class="text-xs text-gray-400 mt-1">Formatos suportados: JPG, PNG, GIF ou WEBP (máx. 50MB).</p>
+                    <div id="projectDetailsThumbPreview" class="hidden mt-3">
+                        <p class="text-xs text-gray-500 mb-2">Pré-visualização:</p>
+                        <img id="projectDetailsThumbPreviewImage" src="" alt="Prévia do projeto"
+                            class="w-full h-32 object-cover rounded-lg border border-gray-200">
+                    </div>
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-medium text-gray-700">Instâncias Administradoras</label>
+                        <button type="button" id="refreshProjectDetailsInstances"
+                            class="text-xs text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1">
+                            <i class="fas fa-sync-alt"></i>
+                            Atualizar
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mb-2">Selecione as instâncias administradoras que fornecem os tokens
+                        (adminsProjeto) e números (telAdminsProjeto) deste projeto.</p>
+                    <div id="projectDetailsInstancesEmptyState"
+                        class="hidden text-xs text-gray-500 bg-gray-100 border border-dashed border-gray-300 rounded-lg p-3">
+                        Nenhuma instância administradora disponível. Atualize para tentar novamente.
+                    </div>
+                    <div id="projectDetailsInstancesList" class="space-y-2 max-h-48 overflow-y-auto">
+                        <p class="text-sm text-gray-500">Carregando instâncias...</p>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 pt-2">
+                    <button type="button"
+                        class="w-full sm:w-auto px-6 py-3 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
+                        data-modal-close="projectDetailsModal">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                        class="w-full sm:w-auto px-6 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-semibold transition">
+                        Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Agendar Atualização do Projeto -->
+    <div id="scheduleProjectModal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 fade-in max-h-[90vh] overflow-y-auto">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800">Agendar Atualização</h3>
+                    <p class="text-sm text-gray-500">Defina novos dados para o projeto e escolha quando eles entram em
+                        vigor.</p>
+                </div>
+                <button type="button" class="text-gray-400 hover:text-gray-600" data-modal-close="scheduleProjectModal">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <form id="scheduleProjectUpdateForm" class="space-y-4">
+                <input type="hidden" id="scheduleProjectHash">
+
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-2 text-sm text-gray-600">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Projeto atual</p>
+                            <p id="scheduleProjectSummaryName" class="text-base font-semibold text-gray-800">Projeto</p>
+                        </div>
+                        <span class="text-xs font-mono text-gray-500">Hash: <span id="scheduleProjectSummaryHash"
+                                class="font-semibold text-gray-700">—</span></span>
+                    </div>
+                    <p id="scheduleProjectSummaryDescription" class="text-sm text-gray-500">Projeto sem descrição.</p>
+                    <div>
+                        <p class="text-xs text-gray-500 mb-1">Thumb atual</p>
+                        <img id="scheduleProjectCurrentThumbImage" src="" alt="Thumb do projeto"
+                            class="w-full h-32 object-cover rounded-lg border border-dashed border-gray-300 hidden">
+                        <p class="text-xs text-gray-400" id="scheduleProjectCurrentThumbPlaceholder">Sem imagem
+                            cadastrada.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-800">Atualizações agendadas</p>
+                            <p class="text-xs text-gray-500">Veja o que já está programado para este projeto.</p>
+                        </div>
+                        <button type="button" id="refreshScheduleProjectUpdates"
+                            class="px-4 py-2 rounded-lg bg-orange-100 hover:bg-orange-200 text-orange-700 text-xs font-semibold transition flex items-center justify-center gap-2">
+                            <i class="fas fa-sync-alt"></i>
+                            Atualizar
+                        </button>
+                    </div>
+                    <div id="scheduleProjectUpdatesEmptyState"
+                        class="hidden text-xs text-gray-500 bg-gray-100 border border-dashed border-gray-300 rounded-lg p-3">
+                        Nenhuma atualização agendada encontrada para este projeto.
+                    </div>
+                    <div id="scheduleProjectUpdatesList" class="space-y-3 text-sm text-gray-600">
+                        <p class="text-sm text-gray-500">Selecione um projeto para visualizar as atualizações.</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                        <p class="text-sm font-semibold text-gray-800">Agendamentos</p>
+                        <p class="text-xs text-gray-500">Crie um ou mais agendamentos com campos independentes.</p>
+                    </div>
+                    <button type="button" id="addScheduleProjectEntry"
+                        class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-orange-100 hover:bg-orange-200 text-orange-700 text-xs font-semibold transition">
+                        <i class="fas fa-plus"></i>
+                        Novo agendamento
+                    </button>
+                </div>
+
+                <div id="scheduleProjectEntries" class="space-y-4"></div>
+                <p class="text-xs text-gray-400">Thumb é opcional em cada agendamento; sem arquivo manterá a imagem
+                    atual.</p>
+
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 pt-2">
+                    <button type="button"
+                        class="w-full sm:w-auto px-6 py-3 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
+                        data-modal-close="scheduleProjectModal">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                        class="w-full sm:w-auto px-6 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-semibold transition flex items-center justify-center gap-2">
+                        <i class="fas fa-calendar-plus"></i>
+                        Agendar alteração
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Nova Instância WhatsApp -->
+    <div id="newWhatsappInstanceModal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 fade-in">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Nova Instância WhatsApp</h3>
+                <button type="button" class="text-gray-400 hover:text-gray-600"
+                    data-modal-close="newWhatsappInstanceModal">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="newWhatsappInstanceForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" id="whatsappEmail" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="usuario@email.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome da Instância</label>
+                    <input type="text" id="whatsappInstanceName" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="Minha Instância">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Número WhatsApp</label>
+                    <div
+                        class="w-full flex rounded-lg border border-gray-300 focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-transparent overflow-hidden">
+                        <span
+                            class="px-4 py-3 bg-gray-100 border-r border-gray-300 text-gray-700 font-semibold select-none">55</span>
+                        <input type="text" id="whatsappNumber" required inputmode="numeric" autocomplete="tel-national"
+                            class="flex-1 px-4 py-3 focus:outline-none" placeholder="(12) 34567-8901">
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">Digite apenas números após o DDD.</p>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="whatsappObserver"
+                        class="w-5 h-5 text-orange-600 focus:ring-orange-500 border-gray-300 rounded">
+                    <label for="whatsappObserver" class="ml-2 text-sm text-gray-700">Instância Observadora</label>
+                </div>
+                <button type="submit"
+                    class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 rounded-lg transition duration-200">
+                    Criar Instância
+                </button>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Modal Mensagens do Projeto -->
+    <div id="projectMessagesModal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 fade-in max-h-[90vh] overflow-y-auto">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800">Mensagens do Projeto</h3>
+                    <p id="projectMessagesSubtitle" class="text-sm text-gray-500">Selecione um projeto para visualizar
+                        suas mensagens.</p>
+                </div>
+                <button type="button" class="text-gray-400 hover:text-gray-600" data-modal-close="projectMessagesModal">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div
+                class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+                <div>
+                    <span class="font-medium text-gray-700">Projeto:</span>
+                    <span id="projectMessagesProjectName" class="block text-gray-800">—</span>
+                </div>
+                <div>
+                    <span class="font-medium text-gray-700">Hash do Projeto:</span>
+                    <span id="projectMessagesProjectHash" class="block font-mono break-all">—</span>
+                </div>
+            </div>
+
+            <div class="flex justify-end mb-6">
+                <button id="projectMessagesCreateButton"
+                    class="flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold transition">
+                    <i class="fas fa-plus"></i>
+                    Agendar Mensagem
+                </button>
+            </div>
+
+            <div class="space-y-6">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-lg font-semibold text-gray-800">Mensagens Agendadas</h4>
+                        <span id="projectMessagesScheduledCount"
+                            class="text-xs font-semibold px-2 py-1 rounded-full bg-blue-100 text-blue-700">0</span>
+                    </div>
+                    <div id="projectMessagesScheduledEmptyState"
+                        class="hidden text-xs text-gray-500 bg-gray-100 border border-dashed border-gray-300 rounded-lg p-3 mb-3">
+                        Nenhuma mensagem agendada para este projeto.
+                    </div>
+                    <div id="projectMessagesScheduledList" class="space-y-3">
+                        <p class="text-sm text-gray-500">Carregando mensagens agendadas...</p>
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-200 pt-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-lg font-semibold text-gray-800">Mensagens Disparadas</h4>
+                        <span id="projectMessagesDispatchedCount"
+                            class="text-xs font-semibold px-2 py-1 rounded-full bg-green-100 text-green-700">0</span>
+                    </div>
+                    <div id="projectMessagesDispatchedEmptyState"
+                        class="hidden text-xs text-gray-500 bg-gray-100 border border-dashed border-gray-300 rounded-lg p-3 mb-3">
+                        Nenhuma mensagem disparada registrada para este projeto.
+                    </div>
+                    <div id="projectMessagesDispatchedList" class="space-y-3">
+                        <p class="text-sm text-gray-500">Carregando mensagens disparadas...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal Criar Mensagem Agendada -->
+    <div id="createScheduledMessageModal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 fade-in max-h-[90vh] overflow-y-auto">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800">Agendar Nova Mensagem</h3>
+                    <p id="createScheduledMessageSubtitle" class="text-sm text-gray-500">Selecione o projeto para enviar
+                        a mensagem.</p>
+                </div>
+                <button type="button" class="text-gray-400 hover:text-gray-600"
+                    data-modal-close="createScheduledMessageModal">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <form id="createScheduledMessageForm" class="space-y-4">
+                <input type="hidden" id="createScheduledMessageHashProjeto">
+
+                <div
+                    class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div>
+                        <span class="font-medium text-gray-700">Projeto:</span>
+                        <span id="createScheduledMessageProjectName" class="block text-gray-800">—</span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-gray-700">Hash do Projeto:</span>
+                        <span id="createScheduledMessageProjectHashDisplay" class="block font-mono break-all">—</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Data do Disparo *</label>
+                        <input type="date" id="createScheduledMessageDate" required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Hora do Disparo *</label>
+                        <input type="time" id="createScheduledMessageTime" step="300" required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                            placeholder="19:10">
+                        <p class="text-xs text-gray-400 mt-1">Informe horários em intervalos de 5 minutos (ex: 19:10,
+                            19:15).</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tipo da Mensagem *</label>
+                        <select id="createScheduledMessageType"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                            <option value="texto">Texto</option>
+                            <option value="image">Imagem</option>
+                            <option value="video">Vídeo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="createScheduledMessageTextField">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Mensagem *</label>
+                    <textarea id="createScheduledMessageText" rows="4"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="Conteúdo da mensagem"></textarea>
+                </div>
+
+                <div id="createScheduledMessageMediaField"
+                    class="hidden border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-medium text-gray-700">Mídia *</label>
+                        <button type="button" id="createScheduledMessageRemoveMedia"
+                            class="text-xs text-red-500 hover:text-red-600 font-medium">
+                            Remover mídia
+                        </button>
+                    </div>
+                    <input type="file" id="createScheduledMessageMedia" accept="image/*,video/*"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                    <p class="text-xs text-gray-400 mt-1">Envie arquivo até 50MB. Obrigatório para imagem ou vídeo.</p>
+                    <div id="createScheduledMessageMediaPreview"
+                        class="hidden text-xs text-gray-500 bg-white border border-dashed border-gray-300 rounded-lg p-2 mt-3">
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 pt-2">
+                    <button type="button"
+                        class="w-full sm:w-auto px-6 py-3 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
+                        data-modal-close="createScheduledMessageModal">Cancelar</button>
+                    <button type="submit"
+                        class="w-full sm:w-auto px-6 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-semibold transition flex items-center justify-center gap-2">
+                        <i class="fas fa-save"></i>
+                        Agendar Mensagem
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Modal Grupos do Projeto -->
+    <div id="projectGroupsModal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 fade-in max-h-[90vh] overflow-y-auto">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800">Grupos do Projeto</h3>
+                    <p id="projectGroupsSubtitle" class="text-sm text-gray-500">Selecione um projeto para visualizar
+                        seus grupos.</p>
+                    <p class="text-xs text-gray-400 mt-1">Os grupos são sincronizados automaticamente conforme as
+                        configurações do projeto.</p>
+                </div>
+                <button type="button" class="text-gray-400 hover:text-gray-600" data-modal-close="projectGroupsModal">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="projectGroupsList" class="space-y-3">
+                <p class="text-sm text-gray-500">Carregando grupos...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Movimentações do Projeto -->
+    <div id="projectGroupsMovementsModal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-6 fade-in max-h-[90vh] overflow-y-auto">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <h3 id="projectMovementsTitle" class="text-xl font-bold text-gray-800">Movimentações do Projeto</h3>
+                    <p class="text-sm text-gray-500">
+                        Hash do projeto: <span id="projectMovementsHash"
+                            class="font-mono text-gray-700 break-all">—</span>
+                    </p>
+                </div>
+                <button type="button" class="text-gray-400 hover:text-gray-600"
+                    data-modal-close="projectGroupsMovementsModal">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="projectMovementsFilterStart"
+                        class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Início do período</label>
+                    <input type="datetime-local" id="projectMovementsFilterStart"
+                        class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label for="projectMovementsFilterEnd"
+                        class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Fim do período</label>
+                    <input type="datetime-local" id="projectMovementsFilterEnd"
+                        class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <p class="text-xs font-semibold text-green-600 uppercase tracking-wide">Entradas</p>
+                    <p id="projectMovementsEntries" class="text-2xl font-bold text-green-700 mt-1">0</p>
+                </div>
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p class="text-xs font-semibold text-red-600 uppercase tracking-wide">Saídas</p>
+                    <p id="projectMovementsExits" class="text-2xl font-bold text-red-700 mt-1">0</p>
+                </div>
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p class="text-xs font-semibold text-blue-600 uppercase tracking-wide">Saldo</p>
+                    <p id="projectMovementsNet" class="text-2xl font-bold text-blue-700 mt-1">0</p>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between mb-4">
+                <p class="text-xs text-gray-500">Atualizado em: <span id="projectMovementsUpdatedAt"
+                        class="font-medium text-gray-700">—</span></p>
+                <div id="projectMovementsLoader" class="hidden text-xs text-gray-500 flex items-center gap-2">
+                    <span
+                        class="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></span>
+                    Carregando movimentações...
+                </div>
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="text-sm font-semibold text-gray-800 uppercase tracking-wide">Resumo por grupo</h4>
+                    <label
+                        class="flex items-center gap-2 text-xs font-medium text-gray-600 cursor-pointer hover:text-orange-600 transition">
+                        <input type="checkbox" id="projectMovementsSelectAll"
+                            class="text-orange-600 focus:ring-orange-500 border-gray-300 rounded" checked>
+                        Selecionar todos
+                    </label>
+                </div>
+                <div id="projectMovementsGroupsList" class="space-y-2">
+                    <p class="text-sm text-gray-500">Carregando grupos...</p>
+                </div>
+            </div>
+
+            <div id="projectMovementsEmpty"
+                class="hidden text-sm text-gray-500 bg-gray-100 border border-dashed border-gray-300 rounded-lg p-4 mb-4">
+                Nenhuma movimentação encontrada para o período selecionado.
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded-lg p-4">
+                <canvas id="projectMovementsChart" height="240"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Movimentações do Grupo -->
+    <div id="groupMovementsModal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full p-6 fade-in max-h-[90vh] overflow-y-auto">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <h3 id="groupMovementsTitle" class="text-xl font-bold text-gray-800">Movimentações do Grupo</h3>
+                    <p class="text-sm text-gray-500">
+                        Hash do grupo: <span id="groupMovementsHash" class="font-mono text-gray-700">—</span>
+                    </p>
+                </div>
+                <button type="button" class="text-gray-400 hover:text-gray-600" data-modal-close="groupMovementsModal">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="groupMovementsFilterStart"
+                        class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Início do período</label>
+                    <input type="datetime-local" id="groupMovementsFilterStart"
+                        class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label for="groupMovementsFilterEnd"
+                        class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Fim do período</label>
+                    <input type="datetime-local" id="groupMovementsFilterEnd"
+                        class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <p class="text-xs font-semibold text-green-600 uppercase tracking-wide">Entradas</p>
+                    <p id="groupMovementsEntries" class="text-2xl font-bold text-green-700 mt-1">0</p>
+                </div>
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p class="text-xs font-semibold text-red-600 uppercase tracking-wide">Saídas</p>
+                    <p id="groupMovementsExits" class="text-2xl font-bold text-red-700 mt-1">0</p>
+                </div>
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p class="text-xs font-semibold text-blue-600 uppercase tracking-wide">Saldo</p>
+                    <p id="groupMovementsNet" class="text-2xl font-bold text-blue-700 mt-1">0</p>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between mb-4">
+                <p class="text-xs text-gray-500">Atualizado em: <span id="groupMovementsUpdatedAt"
+                        class="font-medium text-gray-700">—</span></p>
+                <div id="groupMovementsLoader" class="hidden text-xs text-gray-500 flex items-center gap-2">
+                    <span
+                        class="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></span>
+                    Carregando movimentações...
+                </div>
+            </div>
+
+            <div id="groupMovementsEmpty"
+                class="hidden text-sm text-gray-500 bg-gray-100 border border-dashed border-gray-300 rounded-lg p-4 mb-4">
+                Nenhuma movimentação encontrada para o período selecionado.
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded-lg p-4">
+                <canvas id="groupMovementsChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Criar Grupo do Projeto -->
+    <div id="createProjectGroupModal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 fade-in max-h-[90vh] overflow-y-auto">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800">Novo Grupo</h3>
+                    <p id="createGroupProjectInfo" class="text-sm text-gray-500">Selecione um projeto para criar um novo
+                        grupo.</p>
+                </div>
+                <button type="button" class="text-gray-400 hover:text-gray-600"
+                    data-modal-close="createProjectGroupModal">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="createProjectGroupForm" class="space-y-4">
+                <input type="hidden" id="createGroupProjectHash">
+                <div
+                    class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div>
+                        <span class="font-medium text-gray-700">Projeto:</span>
+                        <span id="createGroupProjectName" class="block text-gray-800">—</span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-gray-700">Hash do Projeto:</span>
+                        <span id="createGroupProjectHashDisplay" class="block font-mono">—</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome do Grupo *</label>
+                    <input type="text" id="createGroupName" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="Ex: Turma VIP 01">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Quantidade de Grupos *</label>
+                    <input type="number" id="createGroupQuantity" min="1" max="10" value="1" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="1">
+                    <p class="text-xs text-gray-500 mt-1">Informe quantos grupos serão criados de uma vez (máximo de
+                        10).</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
+                    <textarea id="createGroupDescription" rows="3"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="Descrição do grupo"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Dono da Instância *</label>
+                    <select id="groupOwnerSelect" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                        <option value="">Selecione uma instância</option>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-2">Apenas instâncias administradoras (observador = não) estão
+                        disponíveis.</p>
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-medium text-gray-700">Administradores</label>
+                        <button type="button" id="refreshGroupAdminsInstances"
+                            class="text-xs text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1">
+                            <i class="fas fa-sync-alt"></i>
+                            Atualizar
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mb-2">Marque as instâncias administradoras que auxiliarão neste
+                        grupo.</p>
+                    <div id="groupAdminsEmptyState"
+                        class="hidden text-xs text-gray-500 bg-gray-100 border border-dashed border-gray-300 rounded-lg p-3">
+                        Nenhuma instância administradora disponível. Atualize para tentar novamente.
+                    </div>
+                    <div id="groupAdminsList" class="space-y-2 max-h-48 overflow-y-auto">
+                        <p class="text-sm text-gray-500">Carregando instâncias...</p>
+                    </div>
+                </div>
+                <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm font-medium text-gray-700">Mensagem para Grupo Cheio</label>
+                        <label class="flex items-center text-sm text-gray-600">
+                            <input type="checkbox" id="disableGroupFullMessage"
+                                class="mr-2 h-4 w-4 text-orange-600 border-gray-300 rounded">
+                            Não enviar
+                        </label>
+                    </div>
+                    <div id="groupFullMessageConfig" class="mt-4 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Tipo da Mensagem *</label>
+                            <select id="groupFullMessageType"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                                <option value="text">Texto</option>
+                                <option value="image">Imagem</option>
+                                <option value="video">Vídeo</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Mensagem *</label>
+                            <textarea id="groupFullMessageText" rows="3"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                placeholder="Mensagem automática quando o grupo estiver cheio"></textarea>
+                        </div>
+                        <div id="groupFullMessageMediaField" class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Mídia</label>
+                            <input type="file" id="groupFullMessageMedia" accept="image/*,video/*"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                            <p class="text-xs text-gray-400">Tamanho máximo de 50MB. Obrigatório para imagem/vídeo.</p>
+                            <div id="groupFullMessageMediaPreview"
+                                class="hidden text-xs text-gray-500 bg-white border border-dashed border-gray-300 rounded-lg p-2">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 pt-2">
+                    <button type="button"
+                        class="w-full sm:w-auto px-6 py-3 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
+                        data-modal-close="createProjectGroupModal">Cancelar</button>
+                    <button type="submit"
+                        class="w-full sm:w-auto px-6 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-semibold transition flex items-center justify-center gap-2">
+                        <i class="fas fa-save"></i>
+                        Criar Grupo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Modal Editar Grupo do Projeto -->
+    <div id="editProjectGroupModal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 fade-in max-h-[90vh] overflow-y-auto">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800">Editar Grupo</h3>
+                    <p id="editGroupProjectInfo" class="text-sm text-gray-500">Selecione um grupo para editar suas
+                        informações.</p>
+                </div>
+                <button type="button" class="text-gray-400 hover:text-gray-600"
+                    data-modal-close="editProjectGroupModal">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="editProjectGroupForm" class="space-y-4">
+                <input type="hidden" id="editGroupProjectHash">
+                <input type="hidden" id="editGroupHash">
+                <div
+                    class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div>
+                        <span class="font-medium text-gray-700">Projeto:</span>
+                        <span id="editGroupProjectName" class="block text-gray-800">—</span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-gray-700">Hash do Projeto:</span>
+                        <span id="editGroupProjectHashDisplay" class="block font-mono">—</span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-gray-700">ID do Grupo:</span>
+                        <span id="editGroupHashDisplay" class="block font-mono break-all">—</span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-gray-700">Comunidade:</span>
+                        <span id="editGroupCommunitieDisplay" class="block font-mono break-all">—</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome do Grupo *</label>
+                    <input type="text" id="editGroupName" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="Ex: Turma VIP 01">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
+                    <textarea id="editGroupDescription" rows="3"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="Descrição do grupo"></textarea>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Quantidade de Integrantes</label>
+                        <input type="number" id="editGroupMembers" min="0"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                            placeholder="0">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Link do Convite</label>
+                        <input type="url" id="editGroupInviteLink"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                            placeholder="https://chat.whatsapp.com/...">
+                    </div>
+                </div>
+                <div class="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-3 bg-gray-50">
+                    <div>
+                        <p class="text-sm font-medium text-gray-700">Status do Grupo</p>
+                        <p class="text-xs text-gray-500">Indica se o grupo está cheio no momento.</p>
+                    </div>
+                    <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                        <input type="checkbox" id="editGroupIsFull"
+                            class="h-4 w-4 text-orange-600 border-gray-300 rounded">
+                        Grupo Cheio
+                    </label>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Dono da Instância *</label>
+                    <select id="editGroupOwnerSelect" required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                        <option value="">Selecione uma instância</option>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-2">Apenas instâncias administradoras (observador = não) estão
+                        disponíveis.</p>
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-medium text-gray-700">Administradores</label>
+                        <div class="flex items-center gap-2">
+                            <button type="button" id="refreshEditGroupAdminsInstances"
+                                class="text-xs text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1">
+                                <i class="fas fa-sync-alt"></i>
+                                Atualizar
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mb-2">Marque as instâncias administradoras que auxiliarão neste
+                        grupo.</p>
+                    <div id="editGroupAdminsEmptyState"
+                        class="hidden text-xs text-gray-500 bg-gray-100 border border-dashed border-gray-300 rounded-lg p-3">
+                        Nenhuma instância administradora disponível. Atualize para tentar novamente.
+                    </div>
+                    <div id="editGroupAdminsList" class="space-y-2 max-h-48 overflow-y-auto">
+                        <p class="text-sm text-gray-500">Carregando instâncias...</p>
+                    </div>
+                </div>
+                <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm font-medium text-gray-700">Mensagem para Grupo Cheio</label>
+                        <label class="flex items-center text-sm text-gray-600">
+                            <input type="checkbox" id="editDisableGroupFullMessage"
+                                class="mr-2 h-4 w-4 text-orange-600 border-gray-300 rounded">
+                            Não enviar
+                        </label>
+                    </div>
+                    <div id="editGroupFullMessageConfig" class="mt-4 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Tipo da Mensagem *</label>
+                            <select id="editGroupFullMessageType"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                                <option value="text">Texto</option>
+                                <option value="image">Imagem</option>
+                                <option value="video">Vídeo</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Mensagem *</label>
+                            <textarea id="editGroupFullMessageText" rows="3"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                placeholder="Mensagem automática quando o grupo estiver cheio"></textarea>
+                        </div>
+                        <div id="editGroupFullMessageMediaField" class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Mídia</label>
+                            <input type="file" id="editGroupFullMessageMedia" accept="image/*,video/*"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                            <p class="text-xs text-gray-400">Tamanho máximo de 50MB. Obrigatório para imagem/vídeo.</p>
+                            <div id="editGroupFullMessageMediaPreview"
+                                class="hidden text-xs text-gray-500 bg-white border border-dashed border-gray-300 rounded-lg p-2">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 pt-2">
+                    <button type="button"
+                        class="w-full sm:w-auto px-6 py-3 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
+                        data-modal-close="editProjectGroupModal">Cancelar</button>
+                    <button type="submit"
+                        class="w-full sm:w-auto px-6 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-semibold transition flex items-center justify-center gap-2">
+                        <i class="fas fa-save"></i>
+                        Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Modal Editar Mensagem Agendada -->
+    <div id="editScheduledMessageModal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full p-6 fade-in max-h-[90vh] overflow-y-auto">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800">Editar Mensagem Agendada</h3>
+                    <p class="text-sm text-gray-500">Atualize as informações da mensagem que será disparada.</p>
+                </div>
+                <button type="button" class="text-gray-400 hover:text-gray-600"
+                    data-modal-close="editScheduledMessageModal">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <form id="editScheduledMessageForm" class="space-y-4">
+                <input type="hidden" id="editScheduledMessageHashMensagem">
+                <input type="hidden" id="editScheduledMessageId">
+                <input type="hidden" id="editScheduledMessageHashProjeto">
+
+                <div
+                    class="grid grid-cols-1 gap-3 text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div>
+                        <span class="font-medium text-gray-700">Projeto:</span>
+                        <span id="editScheduledMessageProjectName" class="block text-gray-800">—</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Data do Disparo *</label>
+                        <input type="date" id="editScheduledMessageDate" required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Hora do Disparo *</label>
+                        <input type="time" id="editScheduledMessageTime" required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tipo da Mensagem *</label>
+                        <select id="editScheduledMessageType"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                            <option value="texto">Texto</option>
+                            <option value="image">Imagem</option>
+                            <option value="video">Vídeo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="editScheduledMessageTextField">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Mensagem *</label>
+                    <textarea id="editScheduledMessageText" rows="4"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        placeholder="Conteúdo da mensagem" required></textarea>
+                </div>
+
+                <div id="editScheduledMessageMediaWrapper" class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-medium text-gray-700">Mídia (opcional)</label>
+                        <button type="button" id="editScheduledMessageRemoveMedia"
+                            class="text-xs text-red-500 hover:text-red-600 font-medium">
+                            Remover mídia
+                        </button>
+                    </div>
+                    <input type="file" id="editScheduledMessageMedia" accept="image/*,video/*"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                    <p class="text-xs text-gray-400 mt-1">Tamanho máximo de 50MB. Obrigatório para formatos de mídia que
+                        não sejam texto.</p>
+                    <div id="editScheduledMessageMediaPreview"
+                        class="hidden text-xs text-gray-500 bg-white border border-dashed border-gray-300 rounded-lg p-2 mt-3">
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 pt-2">
+                    <button type="button"
+                        class="w-full sm:w-auto px-6 py-3 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
+                        data-modal-close="editScheduledMessageModal">Cancelar</button>
+                    <button type="submit"
+                        class="w-full sm:w-auto px-6 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-semibold transition flex items-center justify-center gap-2">
+                        <i class="fas fa-save"></i>
+                        Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Navbar -->
+    <nav class="bg-white shadow-md">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-orange-600 w-10 h-10 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-bolt text-white text-lg"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold text-gray-800">Garagem</h1>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-gray-600" id="userEmail">usuario@email.com</span>
+                        <button type="button"
+                            class="bg-red-100 hover:bg-red-200 text-red-600 px-4 py-2 rounded-lg transition"
+                            data-action="logout">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Sair
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Tabs -->
+    <div class="bg-white border-b">
+        <div class="container mx-auto px-4">
+            <div class="flex space-x-1">
+                <button type="button" data-tab-target="instances"
+                    class="tab-button px-6 py-4 font-medium text-orange-600 border-b-2 border-orange-600">
+                    <i class="fas fa-bullhorn mr-2"></i>Projetos
+                </button>
+                <button type="button" data-tab-target="whatsapp"
+                    class="tab-button px-6 py-4 font-medium text-gray-600 hover:text-orange-600 transition">
+                    <i class="fas fa-brands fa-whatsapp mr-2"></i>Instâncias
+                </button>
+                <button type="button" data-tab-target="messages"
+                    class="tab-button px-6 py-4 font-medium text-gray-600 hover:text-orange-600 transition">
+                    <i class="fas fa-envelope-open-text mr-2"></i>Mensagens
+                </button>
+                <button type="button" data-tab-target="groups"
+                    class="tab-button px-6 py-4 font-medium text-gray-600 hover:text-orange-600 transition">
+                    <i class="fas fa-users mr-2"></i>Grupos
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conteúdo -->
+    <div class="container mx-auto px-4 py-8">
+
+        <!-- Tab Projetos -->
+        <div id="instancesTab" class="tab-content">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Meus Projetos</h2>
+                <button type="button"
+                    class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg font-medium transition"
+                    data-modal-open="newInstanceModal">
+                    <i class="fas fa-plus mr-2"></i>Novo Projeto
+                </button>
+            </div>
+
+            <div id="instancesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Cards serão inseridos via JS -->
+            </div>
+
+            <div id="noInstances" class="hidden text-center py-16">
+                <i class="fas fa-bullhorn text-gray-300 text-6xl mb-4"></i>
+                <p class="text-gray-500 text-lg">Nenhum projeto cadastrado</p>
+                <button type="button" class="mt-4 text-orange-600 hover:text-orange-700 font-medium"
+                    data-modal-open="newInstanceModal">
+                    Criar primeiro projeto
+                </button>
+            </div>
+        </div>
+
+        <!-- Tab Instâncias WhatsApp -->
+        <div id="whatsappTab" class="tab-content hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Instâncias WhatsApp</h2>
+                <button type="button"
+                    class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg font-medium transition"
+                    data-modal-open="newWhatsappInstanceModal">
+                    <i class="fas fa-plus mr-2"></i>Nova Instância
+                </button>
+            </div>
+
+            <div id="whatsappInstancesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Cards de instâncias serão inseridos via JS -->
+            </div>
+
+            <div id="noWhatsappInstances" class="hidden text-center py-16">
+                <i class="fas fa-whatsapp text-gray-300 text-6xl mb-4"></i>
+                <p class="text-gray-500 text-lg">Nenhuma instância cadastrada</p>
+                <button type="button" class="mt-4 text-orange-600 hover:text-orange-700 font-medium"
+                    data-modal-open="newWhatsappInstanceModal">
+                    Criar primeira instância
+                </button>
+            </div>
+        </div>
+
+        <!-- Tab Mensagens -->
+        <div id="messagesTab" class="tab-content hidden">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Mensagens por Projeto</h2>
+                    <p class="text-sm text-gray-500 mt-1">Consulte mensagens agendadas e disparadas organizadas por
+                        projeto e grupo.</p>
+                </div>
+                <button id="refreshProjectMessagesButton"
+                    class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg font-medium transition flex items-center gap-2 self-start md:self-auto">
+                    <i class="fas fa-sync-alt"></i>
+                    Atualizar
+                </button>
+            </div>
+
+            <div id="projectMessagesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Cards serão inseridos via JS -->
+            </div>
+
+            <div id="noProjectMessages" class="hidden text-center py-16">
+                <i class="fas fa-envelope-open text-gray-300 text-6xl mb-4"></i>
+                <p class="text-gray-500 text-lg">Nenhuma mensagem encontrada</p>
+                <p class="text-sm text-gray-400 mt-2">Crie ou agende mensagens para os seus projetos e atualize esta
+                    lista.</p>
+            </div>
+        </div>
+
+        <!-- Tab Grupos -->
+        <div id="groupsTab" class="tab-content hidden">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Grupos por Projeto</h2>
+                    <p class="text-sm text-gray-500 mt-1">Selecione um projeto para visualizar ou criar grupos
+                        associados.</p>
+                </div>
+                <button id="refreshProjectGroupsButton"
+                    class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg font-medium transition flex items-center gap-2">
+                    <i class="fas fa-sync-alt"></i>
+                    Atualizar
+                </button>
+            </div>
+
+            <div id="projectGroupsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Cards serão inseridos via JS -->
+            </div>
+
+            <div id="noProjectGroups" class="hidden text-center py-16">
+                <i class="fas fa-layer-group text-gray-300 text-6xl mb-4"></i>
+                <p class="text-gray-500 text-lg">Nenhum projeto encontrado</p>
+                <p class="text-sm text-gray-400 mt-2">Crie um projeto ou atualize para carregar novamente.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+
+</html>

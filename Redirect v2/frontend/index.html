@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garagem - Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s linear infinite;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-orange-900 to-slate-900 min-h-screen flex items-center justify-center p-4">
+    
+    <!-- Loader Global -->
+    <div id="globalLoader" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="spinner w-16 h-16 mx-auto mb-4"></div>
+            <p class="text-white text-lg" data-loader-label>Carregando...</p>
+        </div>
+    </div>
+
+    <!-- Modal de Notificação -->
+    <div id="notificationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 fade-in">
+            <div class="flex items-center mb-4">
+                <div id="modalIcon" class="mr-3"></div>
+                <h3 id="modalTitle" class="text-xl font-bold text-gray-800"></h3>
+            </div>
+            <p id="modalMessage" class="text-gray-600 mb-6"></p>
+            <button type="button" data-modal-close="notificationModal" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 rounded-lg transition duration-200">
+                Entendi
+            </button>
+        </div>
+    </div>
+
+    <!-- Container Principal -->
+    <div class="w-full max-w-md slide-up">
+        <!-- Logo/Header -->
+        <div class="text-center mb-8">
+            <div class="bg-white w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
+                <i class="fa fa-bolt text-orange-600 text-3xl"></i>
+            </div>
+            <h1 class="text-4xl font-bold text-white mb-2">Garagem</h1>
+            <p class="text-orange-200">Sistema de Gerenciamento</p>
+        </div>
+
+        <!-- Card de Login -->
+        <div id="loginCard" class="bg-white rounded-2xl shadow-2xl p-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Entrar</h2>
+            
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                            <i class="fas fa-envelope text-gray-400"></i>
+                        </span>
+                        <input type="email" id="loginEmail" required
+                            class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
+                            placeholder="seu@email.com">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Senha</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                            <i class="fas fa-lock text-gray-400"></i>
+                        </span>
+                        <input type="password" id="loginPassword" required
+                            class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
+                            placeholder="••••••••">
+                    </div>
+                </div>
+
+                <button type="submit" 
+                    class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 rounded-lg transition duration-200 flex items-center justify-center">
+                    <span id="loginBtnText">Entrar</span>
+                    <div id="loginBtnLoader" class="hidden spinner w-5 h-5 ml-2"></div>
+                </button>
+            </form>
+
+            <div class="mt-6 text-center">
+                <button type="button" data-auth-view="recover" class="text-orange-600 hover:text-orange-700 text-sm font-medium">
+                    Esqueceu a senha?
+                </button>
+            </div>
+
+            <!-- Card de Cadastro -->
+            <!--
+            <div class="mt-6 pt-6 border-t border-gray-200 text-center">
+                <p class="text-gray-600 mb-3">Não tem uma conta?</p>
+                <button type="button" data-auth-view="register"
+                    class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-3 rounded-lg transition duration-200">
+                    Criar Conta
+                </button>
+            </div>
+            -->
+        </div>
+
+        <!-- Card de Cadastro -->
+        <div id="registerCard" class="hidden bg-white rounded-2xl shadow-2xl p-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Criar Conta</h2>
+            
+            <form id="registerForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                            <i class="fas fa-envelope text-gray-400"></i>
+                        </span>
+                        <input type="email" id="registerEmail" required
+                            class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
+                            placeholder="seu@email.com">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Senha</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                            <i class="fas fa-lock text-gray-400"></i>
+                        </span>
+                        <input type="password" id="registerPassword" required
+                            class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
+                            placeholder="••••••••">
+                    </div>
+                </div>
+
+                <button type="submit" 
+                    class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 rounded-lg transition duration-200 flex items-center justify-center">
+                    <span id="registerBtnText">Criar Conta</span>
+                    <div id="registerBtnLoader" class="hidden spinner w-5 h-5 ml-2"></div>
+                </button>
+            </form>
+
+            <div class="mt-6 pt-6 border-t border-gray-200 text-center">
+                <button type="button" data-auth-view="login"
+                    class="text-orange-600 hover:text-orange-700 font-medium">
+                    ← Voltar para Login
+                </button>
+            </div>
+        </div>
+
+        <!-- Card de Recuperação de Senha -->
+        <div id="recoverCard" class="hidden bg-white rounded-2xl shadow-2xl p-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Trocar Senha</h2>
+            
+            <form id="recoverForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                            <i class="fas fa-envelope text-gray-400"></i>
+                        </span>
+                        <input type="email" id="recoverEmail" required
+                            class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
+                            placeholder="seu@email.com">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Senha Antiga</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                            <i class="fas fa-lock text-gray-400"></i>
+                        </span>
+                        <input type="password" id="recoverOldPassword" required
+                            class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
+                            placeholder="••••••••">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Senha Nova</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                            <i class="fas fa-lock text-gray-400"></i>
+                        </span>
+                        <input type="password" id="recoverPassword" required
+                            class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
+                            placeholder="••••••••">
+                    </div>
+                </div>
+
+                <button type="submit" 
+                    class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 rounded-lg transition duration-200 flex items-center justify-center">
+                    <span id="recoverBtnText">Trocar Senha</span>
+                    <div id="recoverBtnLoader" class="hidden spinner w-5 h-5 ml-2"></div>
+                </button>
+            </form>
+
+            <div class="mt-6 pt-6 border-t border-gray-200 text-center">
+                <button type="button" data-auth-view="login"
+                    class="text-orange-600 hover:text-orange-700 font-medium">
+                    ← Voltar para Login
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+</body>
+</html>
+

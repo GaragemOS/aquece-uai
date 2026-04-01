@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+
+  sistema:
+    image: redirect-frontend:latest
+    volumes:
+      - /root/redirect-v2/frontend:/var/www/html
+      - /root/redirect-v2/frontend/docker_config_files/apache2.conf:/etc/apache2/apache2.conf
+      - /root/redirect-v2/frontend/docker_config_files/000-default.conf:/etc/apache2/sites-available/000-default.conf
+      - /root/redirect-v2/frontend/docker_config_files/php.ini:/usr/local/etc/php/php.ini
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=UaiNet"
+        - "traefik.http.routers.sistema.rule=Host(`re.frontend.garagem.dev.br`)"
+        - "traefik.http.routers.sistema.entrypoints=websecure"
+        - "traefik.http.routers.sistema.tls=true"
+        - "traefik.http.routers.sistema.tls.certresolver=letsencryptresolver"
+        - "traefik.http.services.sistema.loadbalancer.server.port=80"
+    networks:
+      - UaiNet
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+networks:
+  UaiNet:
+    external: true

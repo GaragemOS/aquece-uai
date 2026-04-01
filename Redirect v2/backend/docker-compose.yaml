@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  redirect-api:
+    image: redirect-api:latest
+    networks:
+      - UaiNet
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=UaiNet"
+        - "traefik.http.routers.redirect-api.rule=Host(`re.garagem.dev.br`)"
+        - "traefik.http.routers.redirect-api.entrypoints=websecure"
+        - "traefik.http.routers.redirect-api.tls=true"
+        - "traefik.http.routers.redirect-api.tls.certresolver=letsencryptresolver"
+        - "traefik.http.services.redirect-api.loadbalancer.server.port=5000"
+
+networks:
+  UaiNet:
+    external: true
